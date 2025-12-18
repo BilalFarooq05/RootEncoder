@@ -254,6 +254,118 @@ public abstract class DisplayBase {
   }
 
   /**
+   * Call this method before use @startStream for streaming both microphone and internal audio mixed.
+   * This combines microphone input with game/app audio (Android 10+).
+   *
+   * @param bitrate AAC in kb.
+   * @param sampleRate of audio in hz. Can be 8000, 16000, 22500, 32000, 44100.
+   * @param isStereo true if you want Stereo audio (2 audio channels), false if you want Mono audio
+   * (1 audio channel).
+   * @param echoCanceler true enable echo canceler, false disable.
+   * @param noiseSuppressor true enable noise suppressor, false disable.
+   * @return true if success, false if you get a error.
+   */
+  @RequiresApi(api = Build.VERSION_CODES.Q)
+  public boolean prepareMixAudio(int bitrate, int sampleRate, boolean isStereo,
+      boolean echoCanceler, boolean noiseSuppressor) {
+    if (mediaProjection == null) {
+      mediaProjection = mediaProjectionManager.getMediaProjection(resultCode, data);
+    }
+    mediaProjection.registerCallback(mediaProjectionCallback, null);
+    
+    AudioPlaybackCaptureConfiguration config =
+        new AudioPlaybackCaptureConfiguration.Builder(mediaProjection)
+            .addMatchingUsage(AudioAttributes.USAGE_MEDIA)
+            .addMatchingUsage(AudioAttributes.USAGE_GAME)
+            .addMatchingUsage(AudioAttributes.USAGE_UNKNOWN)
+            .build();
+    
+    if (!microphoneManager.createMixMicrophone(
+        MediaRecorder.AudioSource.DEFAULT,
+        config,
+        sampleRate,
+        isStereo,
+        echoCanceler,
+        noiseSuppressor)) {
+      return false;
+    }
+    
+    onAudioInfoImp(isStereo, sampleRate);
+    audioInitialized = audioEncoder.prepareAudioEncoder(bitrate, sampleRate, isStereo);
+    return audioInitialized;
+  }
+
+  /**
+   * Call this method before use @startStream for streaming both microphone and internal audio mixed.
+   * Uses default echo canceler and noise suppressor settings (disabled).
+   *
+   * @param bitrate AAC in kb.
+   * @param sampleRate of audio in hz. Can be 8000, 16000, 22500, 32000, 44100.
+   * @param isStereo true if you want Stereo audio (2 audio channels), false if you want Mono audio
+   * (1 audio channel).
+   * @return true if success, false if you get a error.
+   */
+  @RequiresApi(api = Build.VERSION_CODES.Q)
+  public boolean prepareMixAudio(int bitrate, int sampleRate, boolean isStereo) {
+    return prepareMixAudio(bitrate, sampleRate, isStereo, false, false);
+  }
+
+  /**
+   * Set microphone volume for mixed audio mode.
+   * Must be called after prepareMixAudio.
+   *
+   * @param volume Volume level from 0.0 to 2.0 (1.0 is original volume)
+   */
+  public void setMicrophoneVolume(float volume) {
+    if (volume < 0.0f || volume > 2.0f) {
+      throw new IllegalArgumentException("Volume must be between 0.0 and 2.0");
+    }
+    microphoneManager.setMicrophoneVolume(volume);
+  }
+
+  /**
+   * Set internal/device audio volume for mixed audio mode.
+   * Must be called after prepareMixAudio.
+   *
+   * @param volume Volume level from 0.0 to 2.0 (1.0 is original volume)
+   */
+  public void setInternalAudioVolume(float volume) {
+    if (volume < 0.0f || volume > 2.0f) {
+      throw new IllegalArgumentException("Volume must be between 0.0 and 2.0");
+    }
+    microphoneManager.setInternalVolume(volume);
+  }
+
+  /**
+   * Get current microphone volume level.
+   *
+   * @return Current microphone volume (0.0 to 2.0)
+   */
+  public float getMicrophoneVolume() {
+    return microphoneManager.getMicrophoneVolume();
+  }
+
+  /**
+   * Get current internal audio volume level.
+   *
+   * @return Current internal audio volume (0.0 to 2.0)
+   */
+  public float getInternalAudioVolume() {
+    return microphoneManager.getInternalVolume();
+  }
+
+  /**
+   * Get the MediaProjection instance.
+   * Useful for accessing MediaProjection in custom implementations.
+   *
+   * @return MediaProjection instance or null if not initialized
+   */
+  @Nullable
+  public MediaProjection getMediaProjection() {
+    return mediaProjection;
+  }
+
+  /**
    * Same to call:
    * rotation = 0;
    * if (Portrait) rotation = 90;
@@ -280,6 +392,17 @@ public abstract class DisplayBase {
   @RequiresApi(api = Build.VERSION_CODES.Q)
   public boolean prepareInternalAudio() {
     return prepareInternalAudio(64 * 1024, 32000, true);
+  }
+
+  /**
+   * Same to call:
+   * prepareMixAudio(64 * 1024, 32000, true, false, false);
+   *
+   * @return true if success, false if you get a error.
+   */
+  @RequiresApi(api = Build.VERSION_CODES.Q)
+  public boolean prepareMixAudio() {
+    return prepareMixAudio(64 * 1024, 32000, true, false, false);
   }
 
   /**
@@ -639,4 +762,3 @@ public abstract class DisplayBase {
   protected abstract void setVideoCodecImp(VideoCodec codec);
   protected abstract void setAudioCodecImp(AudioCodec codec);
 }
-
