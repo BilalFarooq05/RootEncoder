@@ -326,7 +326,7 @@ public abstract class DisplayBase {
   /**
    * Set internal/device audio volume for mixed audio mode.
    * Must be called after prepareMixAudio.
-   *
+
    * @param volume Volume level from 0.0 to 2.0 (1.0 is original volume)
    */
   public void setInternalAudioVolume(float volume) {
