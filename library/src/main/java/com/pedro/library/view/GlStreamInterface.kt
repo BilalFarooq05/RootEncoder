@@ -550,10 +550,7 @@ class GlStreamInterface(private val context: Context): OnFrameAvailableListener,
   }
 
     override fun setStaticImage(bitmap: Bitmap?) {
-        if (bitmap == null) {
-            Log.w(TAG, "setStaticImage: bitmap is null")
-            return
-        }
+
 
         this.staticBitmap = bitmap
         this.useStaticImage = true
