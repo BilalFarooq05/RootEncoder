@@ -133,6 +133,21 @@ open class OpenGlView : SurfaceView, GlInterface, OnFrameAvailableListener, Surf
         filterQueue.add(Filter(FilterAction.REMOVE, 0, baseFilterRender))
     }
 
+    override fun setStaticImage(bitmap: Bitmap) {
+        staticBitmap = bitmap
+        useStaticImage = true
+    }
+
+    override fun removeStaticImage() {
+        useStaticImage = false
+        staticBitmap?.takeIf { !it.isRecycled }?.recycle()
+        staticBitmap = null
+    }
+
+    override fun isShowingStaticImage(): Boolean {
+        return false
+    }
+
     override fun filtersCount(): Int {
         return mainRender.filtersCount()
     }
@@ -368,19 +383,6 @@ open class OpenGlView : SurfaceView, GlInterface, OnFrameAvailableListener, Surf
         stop()
     }
 
-    override fun setStaticImage(bitmap: Bitmap) {
-        staticBitmap = bitmap
-        useStaticImage = true
-    }
 
-    override fun removeStaticImage() {
-        useStaticImage = false
-        staticBitmap?.takeIf { !it.isRecycled }?.recycle()
-        staticBitmap = null
-    }
-
-    override fun isShowingStaticImage(): Boolean {
-        return false
-    }
 
 }
