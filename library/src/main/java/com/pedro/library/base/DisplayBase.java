@@ -62,6 +62,8 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 
 import android.graphics.Bitmap;
+import android.util.Log;
+
 
 
 /**
@@ -339,45 +341,39 @@ public abstract class DisplayBase {
     microphoneManager.setInternalVolume(volume);
   }
 
-  public void pauseStreamWithImage(Bitmap pauseImage) {
-  if (glInterface != null) {
-    if (pauseImage != null) {
-      glInterface.setStaticImage(pauseImage);
+    public void pauseStreamWithImage(Bitmap pauseImage) {
+        if (microphoneManager != null) {
+            microphoneManager.mute();
+        }
+        Log.i("DisplayBase", "Stream paused");
     }
-  }
-  
-  // Mute audio
-  if (microphoneManager != null) {
-    microphoneManager.mute();
-  }
-  
-  Log.i("DisplayBase", "Stream paused with static image");
-}
 
-  public void resumeStreamWithImage() {
-  if (glInterface != null) {
-    glInterface.removeStaticImage();
-  }
-  
-  // Unmute audio
-  if (microphoneManager != null) {
-    microphoneManager.unMute();
-  }
-  
-  // Request keyframe for clean resume
-  if (videoEncoder != null && videoEncoder.isRunning()) {
-    videoEncoder.requestKeyframe();
-  }
-  
-  Log.i("DisplayBase", "Stream resumed");
-}
+    /**
+     * Resume stream by unmuting audio
+     */
+    public void resumeStreamWithImage() {
+        if (microphoneManager != null) {
+            microphoneManager.unMute();
+        }
 
-  public boolean isStreamPaused() {
-  if (glInterface != null) {
-    return glInterface.isShowingStaticImage();
-  }
-  return false;
-}
+        if (videoEncoder != null && videoEncoder.isRunning()) {
+            videoEncoder.requestKeyframe();
+        }
+
+        Log.i("DisplayBase", "Stream resumed");
+    }
+
+    /**
+     * Check if paused
+     */
+    public boolean isStreamPaused() {
+        if (microphoneManager != null) {
+            return microphoneManager.isMuted();
+        }
+        return false;
+    }
+
+
 
   /**
    * Get current microphone volume level.

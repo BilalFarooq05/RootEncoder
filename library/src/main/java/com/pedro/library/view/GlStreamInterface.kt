@@ -47,6 +47,10 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.math.max
+import android.graphics.Bitmap
+import android.opengl.GLES20
+import android.opengl.GLUtils
+import android.util.Log
 
 
 /**
@@ -91,6 +95,16 @@ class GlStreamInterface(private val context: Context): OnFrameAvailableListener,
   private var renderErrorCallback: RenderErrorCallback? = null
   private var previewViewPort: ViewPort? = null
   private var streamViewPort: ViewPort? = null
+
+    companion object {
+        private const val TAG = "GlStreamInterface"
+    }
+
+    // Add these fields
+    private var staticBitmap: Bitmap? = null
+    private var useStaticImage = false
+    private var staticTextureId = -1
+    private var staticTextureInitialized = false
 
   private val sensorRotationManager = SensorRotationManager(context, true, true) { orientation, isPortrait ->
     if (autoHandleOrientation && shouldHandleOrientation) {
@@ -534,4 +548,43 @@ class GlStreamInterface(private val context: Context): OnFrameAvailableListener,
   fun setStreamViewPort(viewPort: ViewPort?) {
     streamViewPort = viewPort
   }
+
+    override fun setStaticImage(bitmap: Bitmap?) {
+        if (bitmap == null) {
+            Log.w(TAG, "setStaticImage: bitmap is null")
+            return
+        }
+
+        this.staticBitmap = bitmap
+        this.useStaticImage = true
+        this.staticTextureInitialized = false
+
+        Log.d(TAG, "Static image set: ${bitmap.width}x${bitmap.height}")
+    }
+
+    override fun removeStaticImage() {
+        this.useStaticImage = false
+
+        if (staticTextureId != -1) {
+            val textures = intArrayOf(staticTextureId)
+            GLES20.glDeleteTextures(1, textures, 0)
+            staticTextureId = -1
+        }
+
+        staticBitmap?.let {
+            if (!it.isRecycled) {
+                it.recycle()
+            }
+        }
+        staticBitmap = null
+
+        staticTextureInitialized = false
+
+        Log.d(TAG, "Static image removed")
+    }
+
+    override fun isShowingStaticImage(): Boolean {
+        return useStaticImage && staticBitmap != null
+    }
+
 }
