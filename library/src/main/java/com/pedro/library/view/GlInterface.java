@@ -97,7 +97,7 @@ public interface GlInterface {
     void setRenderErrorCallback(RenderErrorCallback callback);
 
     // Static image methods
-    void setStaticImage(@NonNull Bitmap bitmap);
+    void setStaticImage(@Nullable Bitmap bitmap);
 
     void removeStaticImage();
 

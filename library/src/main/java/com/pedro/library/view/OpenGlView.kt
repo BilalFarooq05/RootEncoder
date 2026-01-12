@@ -368,9 +368,13 @@ open class OpenGlView : SurfaceView, GlInterface, OnFrameAvailableListener, Surf
         stop()
     }
 
-    override fun setStaticImage(bitmap: Bitmap) {
-        staticBitmap = bitmap
-        useStaticImage = true
+    override fun setStaticImage(bitmap: Bitmap?) {
+        if (bitmap != null) {
+            staticBitmap = bitmap
+            useStaticImage = true
+        } else {
+            useStaticImage = false
+        }
     }
 
     override fun removeStaticImage() {
