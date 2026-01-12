@@ -21,6 +21,7 @@ import android.graphics.SurfaceTexture;
 import android.view.Surface;
 
 import androidx.annotation.NonNull;
+import android.graphics.Bitmap;
 
 import com.pedro.encoder.input.gl.render.filters.BaseFilterRender;
 
@@ -34,6 +35,12 @@ public interface GlInterface {
   void setEncoderSize(int width, int height);
 
   void setEncoderRecordSize(int width, int height);
+  
+  void setStaticImage(Bitmap bitmap);
+
+  void removeStaticImage();
+
+
 
   Point getEncoderSize();
   /**
@@ -202,6 +209,9 @@ public interface GlInterface {
   void setForceRender(boolean enabled);
 
   boolean isRunning();
+
+  boolean isShowingStaticImage();
+
 
   void setRenderErrorCallback(RenderErrorCallback callback);
 }
