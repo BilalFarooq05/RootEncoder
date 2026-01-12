@@ -21,7 +21,6 @@ import android.graphics.SurfaceTexture;
 import android.view.Surface;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 
 import android.graphics.Bitmap;
 
@@ -209,7 +208,7 @@ public interface GlInterface {
 
   boolean isRunning();
 
-    void setStaticImage(@Nullable Bitmap bitmap);
+    void setStaticImage( Bitmap bitmap);
     void removeStaticImage();
     boolean isShowingStaticImage();
 

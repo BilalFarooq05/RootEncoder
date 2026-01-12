@@ -368,32 +368,19 @@ open class OpenGlView : SurfaceView, GlInterface, OnFrameAvailableListener, Surf
         stop()
     }
 
-    override fun setStaticImage(bitmap: Bitmap?) {
-        if (bitmap == null) {
-            Log.w(TAG, "setStaticImage: bitmap is null")
-            return
-        }
-        this.staticBitmap = bitmap
-        this.useStaticImage = true
-
-        Log.d(TAG, "Static image set: ${bitmap.width}x${bitmap.height}")
+    public final override fun setStaticImage(bitmap: Bitmap) {
+        staticBitmap = bitmap
+        useStaticImage = true
         Log.w(TAG, "OpenGlView does not support static images, feature disabled")
     }
 
-    override fun removeStaticImage() {
-        this.useStaticImage = false
-
-        staticBitmap?.let {
-            if (!it.isRecycled) {
-                it.recycle()
-            }
-        }
+    public final override fun removeStaticImage() {
+        useStaticImage = false
+        staticBitmap?.takeIf { !it.isRecycled }?.recycle()
         staticBitmap = null
-
-        Log.d(TAG, "Static image removed")
     }
 
-    override fun isShowingStaticImage(): Boolean {
-        return false // OpenGlView doesn't support this
+    public final override fun isShowingStaticImage(): Boolean {
+        return false
     }
 }
