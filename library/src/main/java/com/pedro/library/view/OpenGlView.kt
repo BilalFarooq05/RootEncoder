@@ -42,6 +42,8 @@ import java.util.concurrent.BlockingQueue
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.atomic.AtomicBoolean
+import android.graphics.Bitmap
+import android.util.Log
 
 /**
  * Created by pedro on 10/03/18.
@@ -74,6 +76,13 @@ open class OpenGlView : SurfaceView, GlInterface, OnFrameAvailableListener, Surf
     private val fpsLimiter = FpsLimiter()
     private val forceRenderer = ForceRenderer()
     private var renderErrorCallback: RenderErrorCallback? = null
+
+    companion object {
+        private const val TAG = "OpenGlView"
+    }
+
+    private var staticBitmap: Bitmap? = null
+    private var useStaticImage = false
 
     constructor(context: Context?) : super(context) {
         holder.addCallback(this)
@@ -357,5 +366,35 @@ open class OpenGlView : SurfaceView, GlInterface, OnFrameAvailableListener, Surf
 
     override fun surfaceDestroyed(holder: SurfaceHolder) {
         stop()
+    }
+
+    override fun setStaticImage(bitmap: Bitmap?) {
+        if (bitmap == null) {
+            Log.w(TAG, "setStaticImage: bitmap is null")
+            return
+        }
+
+        this.staticBitmap = bitmap
+        this.useStaticImage = true
+
+        Log.d(TAG, "Static image set: ${bitmap.width}x${bitmap.height}")
+        Log.w(TAG, "OpenGlView does not support static images, feature disabled")
+    }
+
+    override fun removeStaticImage() {
+        this.useStaticImage = false
+
+        staticBitmap?.let {
+            if (!it.isRecycled) {
+                it.recycle()
+            }
+        }
+        staticBitmap = null
+
+        Log.d(TAG, "Static image removed")
+    }
+
+    override fun isShowingStaticImage(): Boolean {
+        return false // OpenGlView doesn't support this
     }
 }
