@@ -338,29 +338,6 @@ class GlStreamInterface(private val context: Context): OnFrameAvailableListener,
     }
   }
 
-    override fun setStaticImage(bitmap: Bitmap) {
-        staticBitmap = bitmap
-        useStaticImage = true
-        staticTextureInitialized = false
-    }
-
-    override fun removeStaticImage() {
-        useStaticImage = false
-
-        if (staticTextureId != -1) {
-            GLES20.glDeleteTextures(1, intArrayOf(staticTextureId), 0)
-            staticTextureId = -1
-        }
-
-        staticBitmap?.takeIf { !it.isRecycled }?.recycle()
-        staticBitmap = null
-        staticTextureInitialized = false
-    }
-
-    override fun isShowingStaticImage(): Boolean {
-        return useStaticImage && staticBitmap != null
-    }
-
   override fun onFrameAvailable(surfaceTexture: SurfaceTexture?) {
     if (!isRunning) return
     executor?.execute {
@@ -565,14 +542,31 @@ class GlStreamInterface(private val context: Context): OnFrameAvailableListener,
   }
 
   fun setPreviewViewPort(viewPort: ViewPort?) {
-    previewViewPort = viewPort
-  }
+        previewViewPort = viewPort
+    }
 
   fun setStreamViewPort(viewPort: ViewPort?) {
-    streamViewPort = viewPort
-  }
+        streamViewPort = viewPort
+    }
 
+  override fun setStaticImage(bitmap: Bitmap) {
+        staticBitmap = bitmap
+        useStaticImage = true
+        staticTextureInitialized = false
+    }
 
+  override fun removeStaticImage() {
+        useStaticImage = false
+        if (staticTextureId != -1) {
+            GLES20.glDeleteTextures(1, intArrayOf(staticTextureId), 0)
+            staticTextureId = -1
+        }
+        staticBitmap?.takeIf { !it.isRecycled }?.recycle()
+        staticBitmap = null
+        staticTextureInitialized = false
+    }
 
-
+  override fun isShowingStaticImage(): Boolean {
+        return useStaticImage && staticBitmap != null
+    }
 }
