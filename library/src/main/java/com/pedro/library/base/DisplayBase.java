@@ -61,6 +61,9 @@ import java.io.FileDescriptor;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
+import android.graphics.Bitmap;
+
+
 /**
  * Wrapper to stream display screen of your device and microphone.
  * Can be executed in background.
@@ -335,6 +338,46 @@ public abstract class DisplayBase {
     }
     microphoneManager.setInternalVolume(volume);
   }
+
+  public void pauseStreamWithImage(Bitmap pauseImage) {
+  if (glInterface != null) {
+    if (pauseImage != null) {
+      glInterface.setStaticImage(pauseImage);
+    }
+  }
+  
+  // Mute audio
+  if (microphoneManager != null) {
+    microphoneManager.mute();
+  }
+  
+  Log.i("DisplayBase", "Stream paused with static image");
+}
+
+  public void resumeStreamWithImage() {
+  if (glInterface != null) {
+    glInterface.removeStaticImage();
+  }
+  
+  // Unmute audio
+  if (microphoneManager != null) {
+    microphoneManager.unMute();
+  }
+  
+  // Request keyframe for clean resume
+  if (videoEncoder != null && videoEncoder.isRunning()) {
+    videoEncoder.requestKeyframe();
+  }
+  
+  Log.i("DisplayBase", "Stream resumed");
+}
+
+  public boolean isStreamPaused() {
+  if (glInterface != null) {
+    return glInterface.isShowingStaticImage();
+  }
+  return false;
+}
 
   /**
    * Get current microphone volume level.
