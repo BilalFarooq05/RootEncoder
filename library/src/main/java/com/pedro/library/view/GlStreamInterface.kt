@@ -47,10 +47,6 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.math.max
-import android.graphics.Bitmap
-import android.opengl.GLES20
-import android.opengl.GLUtils
-import android.util.Log
 
 
 /**
@@ -74,6 +70,7 @@ class GlStreamInterface(private val context: Context): OnFrameAvailableListener,
   private var encoderRecordWidth = 0
   private var encoderRecordHeight = 0
   private var streamOrientation = 0
+  private var previewOrientation = 0
   private var previewWidth = 0
   private var previewHeight = 0
   private var isPortrait = false
@@ -95,16 +92,6 @@ class GlStreamInterface(private val context: Context): OnFrameAvailableListener,
   private var renderErrorCallback: RenderErrorCallback? = null
   private var previewViewPort: ViewPort? = null
   private var streamViewPort: ViewPort? = null
-
-    companion object {
-        private const val TAG = "GlStreamInterface"
-    }
-
-    // Add these fields
-    private var staticBitmap: Bitmap? = null
-    private var useStaticImage = false
-    private var staticTextureId = -1
-    private var staticTextureInitialized = false
 
   private val sensorRotationManager = SensorRotationManager(context, true, true) { orientation, isPortrait ->
     if (autoHandleOrientation && shouldHandleOrientation) {
@@ -310,7 +297,7 @@ class GlStreamInterface(private val context: Context): OnFrameAvailableListener,
         surfaceManager.swapBuffer()
       }
       if (surfaceManagerPreview.makeCurrent()) {
-        mainRender.drawScreenPreview(w, h, orientationPreview, aspectRatioMode, 0,
+        mainRender.drawScreenPreview(w, h, orientationPreview, aspectRatioMode, previewOrientation,
           isPreviewVerticalFlip, isPreviewHorizontalFlip, previewViewPort)
         surfaceManagerPreview.swapBuffer()
       }
@@ -459,6 +446,11 @@ class GlStreamInterface(private val context: Context): OnFrameAvailableListener,
     this.streamOrientation = orientation
   }
 
+  fun setPreviewRotation(orientation: Int) {
+    this.previewOrientation = orientation
+  }
+
+
   fun setPreviewResolution(width: Int, height: Int) {
     this.previewWidth = width
     this.previewHeight = height
@@ -542,35 +534,10 @@ class GlStreamInterface(private val context: Context): OnFrameAvailableListener,
   }
 
   fun setPreviewViewPort(viewPort: ViewPort?) {
-        previewViewPort = viewPort
-    }
+    previewViewPort = viewPort
+  }
 
   fun setStreamViewPort(viewPort: ViewPort?) {
-        streamViewPort = viewPort
-    }
-
-  override fun setStaticImage(bitmap: Bitmap?) {
-        if (bitmap != null) {
-            staticBitmap = bitmap
-            useStaticImage = true
-        } else {
-            useStaticImage = false
-        }
-        staticTextureInitialized = false
-    }
-
-  override fun removeStaticImage() {
-        useStaticImage = false
-        if (staticTextureId != -1) {
-            GLES20.glDeleteTextures(1, intArrayOf(staticTextureId), 0)
-            staticTextureId = -1
-        }
-        staticBitmap?.takeIf { !it.isRecycled }?.recycle()
-        staticBitmap = null
-        staticTextureInitialized = false
-    }
-
-  override fun isShowingStaticImage(): Boolean {
-        return useStaticImage && staticBitmap != null
-    }
+    streamViewPort = viewPort
+  }
 }
