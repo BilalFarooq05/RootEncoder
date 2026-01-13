@@ -42,8 +42,6 @@ import java.util.concurrent.BlockingQueue
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.atomic.AtomicBoolean
-import android.graphics.Bitmap
-import android.util.Log
 
 /**
  * Created by pedro on 10/03/18.
@@ -76,13 +74,6 @@ open class OpenGlView : SurfaceView, GlInterface, OnFrameAvailableListener, Surf
     private val fpsLimiter = FpsLimiter()
     private val forceRenderer = ForceRenderer()
     private var renderErrorCallback: RenderErrorCallback? = null
-
-    companion object {
-        private const val TAG = "OpenGlView"
-    }
-
-    private var staticBitmap: Bitmap? = null
-    private var useStaticImage = false
 
     constructor(context: Context?) : super(context) {
         holder.addCallback(this)
@@ -366,24 +357,5 @@ open class OpenGlView : SurfaceView, GlInterface, OnFrameAvailableListener, Surf
 
     override fun surfaceDestroyed(holder: SurfaceHolder) {
         stop()
-    }
-
-    override fun setStaticImage(bitmap: Bitmap?) {
-        if (bitmap != null) {
-            staticBitmap = bitmap
-            useStaticImage = true
-        } else {
-            useStaticImage = false
-        }
-    }
-
-    override fun removeStaticImage() {
-        useStaticImage = false
-        staticBitmap?.takeIf { !it.isRecycled }?.recycle()
-        staticBitmap = null
-    }
-
-    override fun isShowingStaticImage(): Boolean {
-        return false
     }
 }
