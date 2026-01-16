@@ -234,109 +234,109 @@ class GlStreamInterface(private val context: Context): OnFrameAvailableListener,
     mainRender.release()
   }
 
-  private fun draw(forced: Boolean) {
-    if (!isRunning) return
-    val limitFps = fpsLimiter.limitFPS()
-    if (!forced) forceRender.frameAvailable()
-
-    if (!filterQueue.isEmpty() && mainRender.isReady()) {
-      try {
-        if (surfaceManager.makeCurrent()) {
-          val filter = filterQueue.take()
-          mainRender.setFilterAction(filter.filterAction, filter.position, filter.baseFilterRender)
-        }
-      } catch (_: InterruptedException) {
-        Thread.currentThread().interrupt()
-        return
-      }
-    }
-
-    if (surfaceManager.isReady && mainRender.isReady()) {
-      if (!surfaceManager.makeCurrent()) return
-      mainRender.updateFrame()
-      mainRender.drawSource()
-      surfaceManager.swapBuffer()
-    }
-
-    val orientation = when (orientationForced) {
-      OrientationForced.PORTRAIT -> true
-      OrientationForced.LANDSCAPE -> false
-      OrientationForced.NONE -> isPortrait
-    }
-    val orientationPreview = when (orientationForced) {
-      OrientationForced.PORTRAIT -> true
-      OrientationForced.LANDSCAPE -> false
-      OrientationForced.NONE -> isPortraitPreview
-    }
-    if (surfaceManagerEncoder.isReady || surfaceManagerEncoderRecord.isReady || surfaceManagerPhoto.isReady) {
-      mainRender.drawFilters(false)
-    }
-    // render VideoEncoder (stream and record)
-    if (surfaceManagerEncoder.isReady && mainRender.isReady() && !limitFps) {
-      val w = if (muteVideo) 0 else encoderWidth
-      val h = if (muteVideo) 0 else encoderHeight
-      if (surfaceManagerEncoder.makeCurrent()) {
-        mainRender.drawScreenEncoder(w, h, orientation, streamOrientation,
-          isStreamVerticalFlip, isStreamHorizontalFlip, streamViewPort)
-        surfaceManagerEncoder.swapBuffer()
-      }
-    }
-    // render VideoEncoder (record if the resolution is different than stream)
-    if (surfaceManagerEncoderRecord.isReady && mainRender.isReady() && !limitFps) {
-      val w = if (muteVideo) 0 else encoderRecordWidth
-      val h = if (muteVideo) 0 else encoderRecordHeight
-      if (surfaceManagerEncoderRecord.makeCurrent()) {
-        mainRender.drawScreenEncoder(w, h, orientation, streamOrientation,
-          isStreamVerticalFlip, isStreamHorizontalFlip, streamViewPort)
-        surfaceManagerEncoderRecord.swapBuffer()
-      }
-    }
-    //render surface photo if request photo
-    if (takePhotoCallback != null && surfaceManagerPhoto.isReady && mainRender.isReady()) {
-      if (surfaceManagerPhoto.makeCurrent()) {
-        mainRender.drawScreen(encoderWidth, encoderHeight, AspectRatioMode.NONE,
-          streamOrientation, isStreamVerticalFlip, isStreamHorizontalFlip, streamViewPort)
-        takePhotoCallback?.onTakePhoto(GlUtil.getBitmap(encoderWidth, encoderHeight))
-        takePhotoCallback = null
-        surfaceManagerPhoto.swapBuffer()
-      }
-    }
-    // render preview
-    if (surfaceManagerPreview.isReady && mainRender.isReady() && !limitFps) {
-      val w =  if (previewWidth == 0) encoderWidth else previewWidth
-      val h =  if (previewHeight == 0) encoderHeight else previewHeight
-      if (surfaceManager.makeCurrent()) {
-        mainRender.drawFilters(true)
-        surfaceManager.swapBuffer()
-      }
-      if (surfaceManagerPreview.makeCurrent()) {
-        mainRender.drawScreenPreview(w, h, orientationPreview, aspectRatioMode, 0,
-          isPreviewVerticalFlip, isPreviewHorizontalFlip, previewViewPort)
-        surfaceManagerPreview.swapBuffer()
-      }
-    }
-    // render extra multi-preview surfaces (using independent configuration from PreviewSurfaceInfo)
-    if (multiPreviewSurfaceManagers.isNotEmpty() && mainRender.isReady() && !limitFps) {
-      // Only draw filters if default preview is not active (to avoid double drawing)
-      if (!surfaceManagerPreview.isReady) {
-        if (surfaceManager.makeCurrent()) {
-          mainRender.drawFilters(true)
-          surfaceManager.swapBuffer()
-        }
-      }
-      val previewSnapshot = multiPreviewSurfaceManagers.values.toList()
-      previewSnapshot.forEach { info ->
-        if (info.surfaceManager.isReady) {
-          if (info.surfaceManager.makeCurrent()) {
-            // Each preview uses its own isPortrait and viewPort configuration
-            mainRender.drawScreenPreview(info.config.width, info.config.height, info.config.isPortrait, info.config.aspectRatioMode, 0,
-              info.config.verticalFlip, info.config.horizontalFlip, info.config.viewPort)
-            info.surfaceManager.swapBuffer()
-          }
-        }
-      }
-    }
-  }
+//  private fun draw(forced: Boolean) {
+//    if (!isRunning) return
+//    val limitFps = fpsLimiter.limitFPS()
+//    if (!forced) forceRender.frameAvailable()
+//
+//    if (!filterQueue.isEmpty() && mainRender.isReady()) {
+//      try {
+//        if (surfaceManager.makeCurrent()) {
+//          val filter = filterQueue.take()
+//          mainRender.setFilterAction(filter.filterAction, filter.position, filter.baseFilterRender)
+//        }
+//      } catch (_: InterruptedException) {
+//        Thread.currentThread().interrupt()
+//        return
+//      }
+//    }
+//
+//    if (surfaceManager.isReady && mainRender.isReady()) {
+//      if (!surfaceManager.makeCurrent()) return
+//      mainRender.updateFrame()
+//      mainRender.drawSource()
+//      surfaceManager.swapBuffer()
+//    }
+//
+//    val orientation = when (orientationForced) {
+//      OrientationForced.PORTRAIT -> true
+//      OrientationForced.LANDSCAPE -> false
+//      OrientationForced.NONE -> isPortrait
+//    }
+//    val orientationPreview = when (orientationForced) {
+//      OrientationForced.PORTRAIT -> true
+//      OrientationForced.LANDSCAPE -> false
+//      OrientationForced.NONE -> isPortraitPreview
+//    }
+//    if (surfaceManagerEncoder.isReady || surfaceManagerEncoderRecord.isReady || surfaceManagerPhoto.isReady) {
+//      mainRender.drawFilters(false)
+//    }
+//    // render VideoEncoder (stream and record)
+//    if (surfaceManagerEncoder.isReady && mainRender.isReady() && !limitFps) {
+//      val w = if (muteVideo) 0 else encoderWidth
+//      val h = if (muteVideo) 0 else encoderHeight
+//      if (surfaceManagerEncoder.makeCurrent()) {
+//        mainRender.drawScreenEncoder(w, h, orientation, streamOrientation,
+//          isStreamVerticalFlip, isStreamHorizontalFlip, streamViewPort)
+//        surfaceManagerEncoder.swapBuffer()
+//      }
+//    }
+//    // render VideoEncoder (record if the resolution is different than stream)
+//    if (surfaceManagerEncoderRecord.isReady && mainRender.isReady() && !limitFps) {
+//      val w = if (muteVideo) 0 else encoderRecordWidth
+//      val h = if (muteVideo) 0 else encoderRecordHeight
+//      if (surfaceManagerEncoderRecord.makeCurrent()) {
+//        mainRender.drawScreenEncoder(w, h, orientation, streamOrientation,
+//          isStreamVerticalFlip, isStreamHorizontalFlip, streamViewPort)
+//        surfaceManagerEncoderRecord.swapBuffer()
+//      }
+//    }
+//    //render surface photo if request photo
+//    if (takePhotoCallback != null && surfaceManagerPhoto.isReady && mainRender.isReady()) {
+//      if (surfaceManagerPhoto.makeCurrent()) {
+//        mainRender.drawScreen(encoderWidth, encoderHeight, AspectRatioMode.NONE,
+//          streamOrientation, isStreamVerticalFlip, isStreamHorizontalFlip, streamViewPort)
+//        takePhotoCallback?.onTakePhoto(GlUtil.getBitmap(encoderWidth, encoderHeight))
+//        takePhotoCallback = null
+//        surfaceManagerPhoto.swapBuffer()
+//      }
+//    }
+//    // render preview
+//    if (surfaceManagerPreview.isReady && mainRender.isReady() && !limitFps) {
+//      val w =  if (previewWidth == 0) encoderWidth else previewWidth
+//      val h =  if (previewHeight == 0) encoderHeight else previewHeight
+//      if (surfaceManager.makeCurrent()) {
+//        mainRender.drawFilters(true)
+//        surfaceManager.swapBuffer()
+//      }
+//      if (surfaceManagerPreview.makeCurrent()) {
+//        mainRender.drawScreenPreview(w, h, orientationPreview, aspectRatioMode, 0,
+//          isPreviewVerticalFlip, isPreviewHorizontalFlip, previewViewPort)
+//        surfaceManagerPreview.swapBuffer()
+//      }
+//    }
+//    // render extra multi-preview surfaces (using independent configuration from PreviewSurfaceInfo)
+//    if (multiPreviewSurfaceManagers.isNotEmpty() && mainRender.isReady() && !limitFps) {
+//      // Only draw filters if default preview is not active (to avoid double drawing)
+//      if (!surfaceManagerPreview.isReady) {
+//        if (surfaceManager.makeCurrent()) {
+//          mainRender.drawFilters(true)
+//          surfaceManager.swapBuffer()
+//        }
+//      }
+//      val previewSnapshot = multiPreviewSurfaceManagers.values.toList()
+//      previewSnapshot.forEach { info ->
+//        if (info.surfaceManager.isReady) {
+//          if (info.surfaceManager.makeCurrent()) {
+//            // Each preview uses its own isPortrait and viewPort configuration
+//            mainRender.drawScreenPreview(info.config.width, info.config.height, info.config.isPortrait, info.config.aspectRatioMode, 0,
+//              info.config.verticalFlip, info.config.horizontalFlip, info.config.viewPort)
+//            info.surfaceManager.swapBuffer()
+//          }
+//        }
+//      }
+//    }
+//  }
 
   override fun onFrameAvailable(surfaceTexture: SurfaceTexture?) {
     if (!isRunning) return
