@@ -370,6 +370,37 @@ public abstract class DisplayBase {
 
 }
 
+
+
+    public void setStaticImageOverlay(Bitmap image) {
+        if (glInterface != null) {
+            glInterface.setStaticImage(image);
+        }
+//        Log.d("DisplayBase", "Static image overlay set");
+    }
+
+    /**
+     * Remove the static image overlay.
+     */
+    public void removeStaticImageOverlay() {
+        if (glInterface != null) {
+            glInterface.removeStaticImage();
+        }
+//        Log.i("DisplayBase", "Static image overlay removed");
+    }
+
+    /**
+     * Check if static image is currently being displayed.
+     *
+     * @return true if static image is showing, false otherwise
+     */
+    public boolean isStaticImageShowing() {
+        if (glInterface != null) {
+            return glInterface.isShowingStaticImage();
+        }
+        return false;
+    }
+
   public boolean isStreamPaused() {
   if (glInterface != null) {
     return glInterface.isShowingStaticImage();
