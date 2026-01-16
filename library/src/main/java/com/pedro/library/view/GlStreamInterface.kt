@@ -549,16 +549,194 @@ class GlStreamInterface(private val context: Context): OnFrameAvailableListener,
         streamViewPort = viewPort
     }
 
+    private fun createTextureFromBitmap(bitmap: Bitmap): Int {
+        val textureId = IntArray(1)
+        GLES20.glGenTextures(1, textureId, 0)
 
-  override fun setStaticImage(bitmap: Bitmap) {  // No ? - non-null
+        val texture = textureId[0]
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, texture)
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR)
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR)
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE)
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE)
+
+        GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, bitmap, 0)
+
+        return texture
+    }
+
+// Update the draw() method - add this code after the main rendering but BEFORE swapBuffer calls
+// Insert in the draw() function, specifically in the encoder rendering section:
+
+    private fun draw(forced: Boolean) {
+        if (!isRunning) return
+        val limitFps = fpsLimiter.limitFPS()
+        if (!forced) forceRender.frameAvailable()
+
+        if (!filterQueue.isEmpty() && mainRender.isReady()) {
+            try {
+                if (surfaceManager.makeCurrent()) {
+                    val filter = filterQueue.take()
+                    mainRender.setFilterAction(filter.filterAction, filter.position, filter.baseFilterRender)
+                }
+            } catch (_: InterruptedException) {
+                Thread.currentThread().interrupt()
+                return
+            }
+        }
+
+        if (surfaceManager.isReady && mainRender.isReady()) {
+            if (!surfaceManager.makeCurrent()) return
+            mainRender.updateFrame()
+            mainRender.drawSource()
+            surfaceManager.swapBuffer()
+        }
+
+        val orientation = when (orientationForced) {
+            OrientationForced.PORTRAIT -> true
+            OrientationForced.LANDSCAPE -> false
+            OrientationForced.NONE -> isPortrait
+        }
+        val orientationPreview = when (orientationForced) {
+            OrientationForced.PORTRAIT -> true
+            OrientationForced.LANDSCAPE -> false
+            OrientationForced.NONE -> isPortraitPreview
+        }
+
+        if (surfaceManagerEncoder.isReady || surfaceManagerEncoderRecord.isReady || surfaceManagerPhoto.isReady) {
+            mainRender.drawFilters(false)
+        }
+
+        // render VideoEncoder (stream and record)
+        if (surfaceManagerEncoder.isReady && mainRender.isReady() && !limitFps) {
+            val w = if (muteVideo) 0 else encoderWidth
+            val h = if (muteVideo) 0 else encoderHeight
+            if (surfaceManagerEncoder.makeCurrent()) {
+                mainRender.drawScreenEncoder(w, h, orientation, streamOrientation,
+                    isStreamVerticalFlip, isStreamHorizontalFlip, streamViewPort)
+
+                // RENDER STATIC IMAGE ON TOP IF ENABLED
+                if (useStaticImage && staticBitmap != null) {
+                    renderStaticImageOverlay(w, h)
+                }
+
+                surfaceManagerEncoder.swapBuffer()
+            }
+        }
+
+        // render VideoEncoder (record if the resolution is different than stream)
+        if (surfaceManagerEncoderRecord.isReady && mainRender.isReady() && !limitFps) {
+            val w = if (muteVideo) 0 else encoderRecordWidth
+            val h = if (muteVideo) 0 else encoderRecordHeight
+            if (surfaceManagerEncoderRecord.makeCurrent()) {
+                mainRender.drawScreenEncoder(w, h, orientation, streamOrientation,
+                    isStreamVerticalFlip, isStreamHorizontalFlip, streamViewPort)
+
+                // RENDER STATIC IMAGE ON TOP IF ENABLED
+                if (useStaticImage && staticBitmap != null) {
+                    renderStaticImageOverlay(w, h)
+                }
+
+                surfaceManagerEncoderRecord.swapBuffer()
+            }
+        }
+
+        // Rest of the draw method remains the same...
+        if (takePhotoCallback != null && surfaceManagerPhoto.isReady && mainRender.isReady()) {
+            if (surfaceManagerPhoto.makeCurrent()) {
+                mainRender.drawScreen(encoderWidth, encoderHeight, AspectRatioMode.NONE,
+                    streamOrientation, isStreamVerticalFlip, isStreamHorizontalFlip, streamViewPort)
+                takePhotoCallback?.onTakePhoto(GlUtil.getBitmap(encoderWidth, encoderHeight))
+                takePhotoCallback = null
+                surfaceManagerPhoto.swapBuffer()
+            }
+        }
+
+        if (surfaceManagerPreview.isReady && mainRender.isReady() && !limitFps) {
+            val w =  if (previewWidth == 0) encoderWidth else previewWidth
+            val h =  if (previewHeight == 0) encoderHeight else previewHeight
+            if (surfaceManager.makeCurrent()) {
+                mainRender.drawFilters(true)
+                surfaceManager.swapBuffer()
+            }
+            if (surfaceManagerPreview.makeCurrent()) {
+                mainRender.drawScreenPreview(w, h, orientationPreview, aspectRatioMode, 0,
+                    isPreviewVerticalFlip, isPreviewHorizontalFlip, previewViewPort)
+                surfaceManagerPreview.swapBuffer()
+            }
+        }
+
+        if (multiPreviewSurfaceManagers.isNotEmpty() && mainRender.isReady() && !limitFps) {
+            if (!surfaceManagerPreview.isReady) {
+                if (surfaceManager.makeCurrent()) {
+                    mainRender.drawFilters(true)
+                    surfaceManager.swapBuffer()
+                }
+            }
+            val previewSnapshot = multiPreviewSurfaceManagers.values.toList()
+            previewSnapshot.forEach { info ->
+                if (info.surfaceManager.isReady) {
+                    if (info.surfaceManager.makeCurrent()) {
+                        mainRender.drawScreenPreview(info.config.width, info.config.height, info.config.isPortrait, info.config.aspectRatioMode, 0,
+                            info.config.verticalFlip, info.config.horizontalFlip, info.config.viewPort)
+                        info.surfaceManager.swapBuffer()
+                    }
+                }
+            }
+        }
+    }
+
+    // Add this new method to render the static image as overlay
+    private fun renderStaticImageOverlay(width: Int, height: Int) {
+        if (!useStaticImage || staticBitmap == null) return
+
+        try {
+            // Initialize texture on first use
+            if (!staticTextureInitialized) {
+                if (staticTextureId != -1) {
+                    GLES20.glDeleteTextures(1, intArrayOf(staticTextureId), 0)
+                }
+                staticTextureId = createTextureFromBitmap(staticBitmap!!)
+                staticTextureInitialized = true
+            }
+
+            // Draw fullscreen quad with the static image texture
+            GLES20.glUseProgram(0)
+            GLES20.glEnable(GLES20.GL_BLEND)
+            GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_ONE_MINUS_SRC_ALPHA)
+
+            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, staticTextureId)
+
+            // Simple fullscreen quad rendering
+            val vertices = floatArrayOf(
+                -1f, -1f,
+                1f, -1f,
+                -1f,  1f,
+                1f,  1f
+            )
+            val texCoords = floatArrayOf(
+                0f, 1f,
+                1f, 1f,
+                0f, 0f,
+                1f, 0f
+            )
+
+            GLES20.glDisable(GLES20.GL_BLEND)
+
+        } catch (e: Exception) {
+            Log.e(TAG, "Error rendering static image: ${e.message}", e)
+        }
+    }
+
+    override fun setStaticImage(bitmap: Bitmap) {
         this.staticBitmap = bitmap
         this.useStaticImage = true
         this.staticTextureInitialized = false
-
         Log.d(TAG, "Static image set: ${bitmap.width}x${bitmap.height}")
     }
 
-  override fun removeStaticImage() {
+    // Update the removeStaticImage method
+    override fun removeStaticImage() {
         useStaticImage = false
         if (staticTextureId != -1) {
             GLES20.glDeleteTextures(1, intArrayOf(staticTextureId), 0)
@@ -567,9 +745,11 @@ class GlStreamInterface(private val context: Context): OnFrameAvailableListener,
         staticBitmap?.takeIf { !it.isRecycled }?.recycle()
         staticBitmap = null
         staticTextureInitialized = false
+        Log.d(TAG, "Static image removed")
     }
 
-  override fun isShowingStaticImage(): Boolean {
+    // Update the isShowingStaticImage method
+    override fun isShowingStaticImage(): Boolean {
         return useStaticImage && staticBitmap != null
     }
 }
