@@ -549,14 +549,13 @@ class GlStreamInterface(private val context: Context): OnFrameAvailableListener,
         streamViewPort = viewPort
     }
 
-  override fun setStaticImage(bitmap: Bitmap?) {
-        if (bitmap != null) {
-            staticBitmap = bitmap
-            useStaticImage = true
-        } else {
-            useStaticImage = false
-        }
-        staticTextureInitialized = false
+
+  override fun setStaticImage(bitmap: Bitmap) {  // No ? - non-null
+        this.staticBitmap = bitmap
+        this.useStaticImage = true
+        this.staticTextureInitialized = false
+
+        Log.d(TAG, "Static image set: ${bitmap.width}x${bitmap.height}")
     }
 
   override fun removeStaticImage() {

@@ -20,8 +20,6 @@ import android.graphics.Bitmap;
 import android.graphics.Point;
 import android.graphics.SurfaceTexture;
 import android.view.Surface;
-
-import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.pedro.encoder.input.gl.render.filters.BaseFilterRender;
@@ -97,7 +95,7 @@ public interface GlInterface {
     void setRenderErrorCallback(RenderErrorCallback callback);
 
     // Static image methods
-    void setStaticImage(@Nullable Bitmap bitmap);
+    void setStaticImage(Bitmap bitmap);
 
     void removeStaticImage();
 
