@@ -20,7 +20,6 @@ import android.graphics.Bitmap;
 import android.graphics.Point;
 import android.graphics.SurfaceTexture;
 import android.view.Surface;
-import androidx.annotation.Nullable;
 
 import com.pedro.encoder.input.gl.render.filters.BaseFilterRender;
 
